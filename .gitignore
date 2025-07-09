@@ -1,3 +1,4 @@
 # when you ask cursor to generate code, it will create it in a folder called figma-to-html/
 figma-to-html/
 .DS_Store
+mcp.json
