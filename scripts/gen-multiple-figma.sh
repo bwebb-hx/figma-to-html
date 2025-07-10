@@ -22,8 +22,10 @@ figma_urls="$@"
 base_prompt="Generate HTML/CSS for the following figma design, without using SPA frameworks like React. Put the generated code under a directory named "generated", and in a directory named after the figma layer name."
 
 # Loop through each figma URL and generate the HTML/CSS
+i=0
 for url in $figma_urls; do
-    echo "Generating HTML/CSS for $url"
+    i=$((i+1))
+    echo "[ $i / $# ] Generating HTML/CSS for $url"
     claude -p "$base_prompt. Design URL: $url" \
-      --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits
+      --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits >> "gen-multiple-figma.log"
 done

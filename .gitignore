@@ -2,3 +2,12 @@
 figma-to-html/
 .DS_Store
 mcp.json
+
+# commonly generated files in our testing that we don't wanna commit
+*.html
+*.css
+*.js
+
+generated/
+
+*.log

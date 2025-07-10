@@ -36,3 +36,14 @@ done <<< "$urls"
 
 # pass all the URLs to the gen-multiple-figma.sh script
 bash scripts/gen-multiple-figma.sh "${urls_array[@]}"
+
+# put all the HTML/CSS files together into a single HTML file
+
+echo "Combining layers into a single HTML file... (this could take a minute or two)"
+
+base_prompt='In the directory called "generated", there are several directories that each have the HTML/CSS for a layer in a figma design.
+Put them all together into a single HTML file (and single CSS file).
+Take a look at this figma design, and try to put all of these HTML files together.'
+
+claude -p "$base_prompt Design URL: $1" \
+    --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits
