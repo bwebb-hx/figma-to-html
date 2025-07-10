@@ -95,5 +95,62 @@ First, let's think of how scripting or automation would be useful in terms of co
 - So, perhaps we could make a script that causes claude to iterate a few times on the same figma design, gradually improving it without needing user intervention.
 - We could give claude a prompt each time, perhaps asking it to "look for inaccuracies and fix them". And set a number of iterations to repeat this?
 
-> in order to use the figma MCP server in claude code while NOT in interactive mode, you need to give claude code permission.
-> 
+### Giving Permissions to Claude Code Non-interactive Mode
+
+To use Claude Code in a script, you can simply call it and give it text as an argument, like this:
+
+```bash
+# to execute the prompt without any output
+claude "center the div in index.html"
+
+# to execute the prompt and print an output to the terminal
+claude -p "center the div in index.html"
+```
+
+However, you need to give permissions to claude code to let it do things like edit files or use the Figma MCP server. 
+Here are the flags to add:
+
+```bash
+# allows the MCP server called "figma-mcp-1" to be used
+--allowedTools mcp__figma-mcp-1 
+
+# allows claude to edit or create files
+--permission-mode acceptEdits
+
+# so, for example, this lets claude read a figma design and create the code for it:
+claude "create this figma design in HTML/CSS: <url here>" --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits
+```
+
+### Script: Generate Designs for a List of URLs
+
+I started with this, and it worked quite well actually. In my first claude code test, I noticed that there were a lot of inaccuracies and I had to iterate several times to start getting the design fully created. This made me wonder if I was feeding too much design data into claude code at once, so instead I tried getting the figma URLs for each top-level layer of the figma design. The results were significantly better.
+
+So, I end up with a bunch of `index.html` and `styles.css` files for each top-level layer of the design.
+
+The next part to consider is how to put them all together. There are two possibilities:
+
+- I manually put them together. Not too much work to be honest, so totally doable.
+- I try to get Cursor or Claude Code to piece them together. Not sure how this would work, but I like the idea of automating this process as much as possible.
+
+Let's try asking claude code, in interactive mode, to look at the figma design and then try to put all the individual HTML files together into one big HTML file.
+
+I gave claude code this prompt:
+
+```
+There is a directory called "generated", where within there are several directories that each
+have the HTML/CSS for a layer in a figma design. I now want to put them all together into a single HTML file (and
+single CSS file). Can you do this for me? Take a look at this figma design, and try to put all of these HTML files
+together for me.
+
+https://www.figma.com/design/AxOg233wgtoO27RFd8QIOv/M55_%E3%82%B3%E3%83%BC%E3%83%86%E3%82%99%E3%82%A3%E3%83%B3%E3%
+82%AF%E3%82%99%E3%83%86%E3%82%B9%E3%83%88%E7%94%A8?node-id=1-1061&t=cXDUkWIRVTwE31dg-4
+```
+
+... and, it actually did the job more or less perfectly! It put together 6 different HTML pages - all representing different top-level layers from the main design - together, using the main design itself as reference.
+
+Here's the cost of this "putting together" step, as output from the CLI:
+
+```
+Total cost:            $0.4831
+Total duration (API):  6m 6.0s
+```

@@ -26,6 +26,4 @@ for url in $figma_urls; do
     echo "Generating HTML/CSS for $url"
     claude -p "$base_prompt. Design URL: $url" \
       --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits
-    echo "Sleeping for 10 seconds..."
-    sleep 10
 done
