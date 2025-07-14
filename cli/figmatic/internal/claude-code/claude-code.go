@@ -3,9 +3,16 @@ package claude_code
 // package to call the claude code cli from go
 
 import (
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
+)
+
+var (
+	TotalCostUsd float64 = 0
 )
 
 type PromptOps struct {
@@ -39,6 +46,23 @@ func MCPExists(mcpName string) bool {
 	return strings.Contains(mcpString, mcpName)
 }
 
+type ClaudeJSONResponse struct {
+	Result       string  `json:"result"`
+	Subtype      string  `json:"subtype"`
+	IsError      bool    `json:"is_error"`
+	TotalCostUsd float64 `json:"total_cost_usd"`
+}
+
+func (r ClaudeJSONResponse) String() string {
+	s := ""
+	if r.IsError {
+		s += utils.Colors.Error("ERROR\n")
+	}
+	s += fmt.Sprintf("%s\n", r.Result)
+	s += utils.Colors.Lowkey(fmt.Sprintf("(%s / total cost USD: %v)", r.Subtype, r.TotalCostUsd))
+	return s
+}
+
 func Prompt(prompt string, ops PromptOps) (string, error) {
 	args := []string{"-p", fmt.Sprintf("\"%s\"", prompt)}
 
@@ -50,9 +74,9 @@ func Prompt(prompt string, ops PromptOps) (string, error) {
 		args = append(args, "--permission-mode", "acceptEdits")
 	}
 
-	cmd := exec.Command("claude", args...)
+	args = append(args, "--output-format", "json")
 
-	fmt.Println("executing claude command:", cmd.Args)
+	cmd := exec.Command("claude", args...)
 
 	// execute the command and capture the output
 	output, err := cmd.CombinedOutput()
@@ -60,7 +84,12 @@ func Prompt(prompt string, ops PromptOps) (string, error) {
 		return "", fmt.Errorf("failed to execute claude command: %w", err)
 	}
 
-	fmt.Println("claude command output:", string(output))
+	var response ClaudeJSONResponse
+	if err := json.Unmarshal(output, &response); err != nil {
+		return "", fmt.Errorf("failed to unmarshal claude response: %w", err)
+	}
 
-	return string(output), nil
+	TotalCostUsd += response.TotalCostUsd
+
+	return response.String(), nil
 }

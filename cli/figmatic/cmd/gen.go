@@ -11,6 +11,7 @@ import (
 
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/codegen"
 	figma_api "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/figma-api"
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -51,17 +52,23 @@ to quickly create a Cobra application.`,
 				urls = append(urls, figmaURL)
 			}
 
-			i := 0
-			for _, url := range urls {
-				i++
-				fmt.Printf("[%v/%v] Generating HTML for %s\n", i, len(urls), url)
+			var totalElapsed time.Duration
+
+			for i, url := range urls {
+				fmt.Printf("\n[%v/%v] Generating HTML for %s\n", i+1, len(urls), url)
+				if totalElapsed > 0 {
+					timeEstimate := totalElapsed / time.Duration(i) * time.Duration(len(urls)-i)
+					utils.Colors.LowkeyPrint(fmt.Sprintf("time remaining: %s", timeEstimate.Truncate(time.Second)))
+				}
+
 				start := time.Now()
 				output, err := codegen.GenerateHTML(url)
 				if err != nil {
 					fmt.Fprint(os.Stderr, output+"\n")
 					log.Fatal(err)
 				}
-				fmt.Printf("done! %v seconds elapsed\n", time.Since(start).Seconds())
+				utils.Colors.Lowkey(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
+				totalElapsed += time.Since(start)
 			}
 
 			if len(urls) == 1 {
@@ -69,11 +76,15 @@ to quickly create a Cobra application.`,
 				os.Exit(0)
 			}
 
+			fmt.Println("\nCombining HTML files. This could take a few minutes...")
+			start := time.Now()
 			output, err := codegen.CombineHTML(figmaURL)
 			if err != nil {
 				fmt.Fprint(os.Stderr, output+"\n")
 				log.Fatal(err)
 			}
+			utils.Colors.Lowkey(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
+			fmt.Println("\nClaude:")
 			fmt.Println(output)
 		} else {
 			// generate HTML for the original node
