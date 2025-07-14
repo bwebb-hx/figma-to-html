@@ -154,3 +154,17 @@ Here's the cost of this "putting together" step, as output from the CLI:
 Total cost:            $0.4831
 Total duration (API):  6m 6.0s
 ```
+
+## Dev Notes
+
+Here are some things I've learned about claude code as I've been working with the CLI and building my own wrapper CLI:
+
+### MCP Server Scopes
+
+When you register an MCP server, it might not be globally accessible (i.e. usable by claude code regardless of where you are in your directories). This depends on scope.
+
+In the instructions above, we are setting a **local** scope. This means it's only accessible in that same directory.
+
+If you want an MCP server that's globally accessible, then you need to use the **user** scope. More on that here:
+
+https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope
