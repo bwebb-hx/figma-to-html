@@ -18,6 +18,7 @@ import (
 var figmaURL string
 var figmaAccessToken string
 var genSubNodes bool
+var iterations int
 
 // genCmd represents the gen command
 var genCmd = &cobra.Command{
@@ -47,38 +48,50 @@ var genCmd = &cobra.Command{
 
 		if genSubNodes {
 			fmt.Println("Getting URLs for sub-nodes of the provided Figma design node...")
-			urls, err := figma_api.GetNodeURLs(figmaURL, figmaAccessToken)
+			nodes, err := figma_api.GetNodeURLs(figmaURL, figmaAccessToken)
 			if err != nil {
 				log.Fatal(err)
 			}
 			// if no sub-node URLs are found, try using the original node URL
-			if len(urls) == 0 {
+			if len(nodes) == 0 {
 				fmt.Println("No sub-node URLs found. Using the original node URL.")
-				urls = append(urls, figmaURL)
+				nodes = append(nodes, figma_api.FigmaNode{URL: figmaURL})
 			} else {
-				fmt.Printf("Found %v sub-node URLs.\n", len(urls))
+				fmt.Printf("Found %v sub-node URLs.\n", len(nodes))
 			}
 
 			var totalElapsed time.Duration
 
-			for i, url := range urls {
-				fmt.Printf("\n[%v/%v] Generating HTML for %s\n", i+1, len(urls), url)
+			for i, node := range nodes {
+				fmt.Printf("\n[%v/%v] Generating HTML for %s\n", i+1, len(nodes), node.URL)
 				if totalElapsed > 0 {
-					timeEstimate := totalElapsed / time.Duration(i) * time.Duration(len(urls)-i)
+					timeEstimate := totalElapsed / time.Duration(i) * time.Duration(len(nodes)-i)
 					utils.Colors.LowkeyPrint(fmt.Sprintf("time remaining: %s", timeEstimate.Truncate(time.Second)))
 				}
 
 				start := time.Now()
-				output, err := codegen.GenerateHTML(url)
+				output, err := codegen.GenerateHTML(node.URL, node.LayerName)
 				if err != nil {
 					fmt.Fprint(os.Stderr, output+"\n")
 					log.Fatal(err)
 				}
-				utils.Colors.Lowkey(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
+				if iterations > 0 {
+					for i := range iterations {
+						fmt.Printf("..[%v/%v] Iterating on the HTML for %s...\n", i+1, iterations, figmaURL)
+						output, err = codegen.ImproveHTML(node.URL, node.LayerName)
+						if err != nil {
+							log.Println(err)
+							break // for now, break out since we've already generated code
+						}
+						utils.Colors.LowkeyPrint("..Iteration output from Claude:")
+						utils.Colors.LowkeyPrint(output)
+					}
+				}
+				utils.Colors.LowkeyPrint(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
 				totalElapsed += time.Since(start)
 			}
 
-			if len(urls) == 1 {
+			if len(nodes) == 1 {
 				log.Println("only one URL generated; skipping combine step.")
 				os.Exit(0)
 			}
@@ -96,12 +109,27 @@ var genCmd = &cobra.Command{
 		} else {
 			// generate HTML for the original node
 			fmt.Printf("Generating HTML for %s...\n", figmaURL)
-			output, err := codegen.GenerateHTML(figmaURL)
+
+			output, err := codegen.GenerateHTML(figmaURL, "root")
 			if err != nil {
 				log.Fatal(err)
 			}
 			fmt.Println("\nClaude:")
 			fmt.Println(output)
+
+			if iterations > 0 {
+				for i := range iterations {
+					fmt.Printf("[%v/%v] Iterating on the HTML for %s...\n", i+1, iterations, figmaURL)
+					output, err = codegen.ImproveHTML(figmaURL, "root")
+					if err != nil {
+						log.Println(err)
+						break // for now, break out since we've already generated code
+					}
+					utils.Colors.LowkeyPrint("Iteration output from Claude:")
+					utils.Colors.LowkeyPrint(output)
+				}
+				fmt.Println("Iterations complete!")
+			}
 		}
 	},
 }
@@ -111,15 +139,6 @@ func init() {
 
 	genCmd.Flags().StringVarP(&figmaURL, "url", "u", "", "Figma design URL")
 	genCmd.Flags().StringVarP(&figmaAccessToken, "figma-access-token", "t", "", "Figma access token")
-	genCmd.Flags().BoolVarP(&genSubNodes, "sub-nodes", "s", false, "Generate HTML for sub-nodes and then combine them. Increases accuracy, especially for complex designs, but increases time and uses more claude code API calls.")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// genCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// genCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	genCmd.Flags().BoolVarP(&genSubNodes, "sub-nodes", "s", false, "Generate HTML for sub-nodes and then combine them. Increases accuracy, especially for complex designs, but increases time and cost.")
+	genCmd.Flags().IntVarP(&iterations, "iterations", "i", 0, "Number of extra iterations for Claude to refine the generated code. Defaults to 0. An iteration involves asking Claude to review how accurate the code is and try to improve it.")
 }

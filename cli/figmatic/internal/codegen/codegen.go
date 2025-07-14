@@ -6,12 +6,22 @@ import (
 	claude_code "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/claude-code"
 )
 
-func GenerateHTML(url string) (string, error) {
-	basePrompt := "Generate HTML/CSS for the following figma design, without using SPA frameworks like React. Put the generated code under a directory named 'generated', and in a directory named after the figma layer name."
+func GenerateHTML(url string, nodeName string) (string, error) {
+	basePrompt := fmt.Sprintf("Generate HTML/CSS for the following figma design, without using SPA frameworks like React. Put the generated code in a directory called 'generated/%s'.", nodeName)
 	prompt := fmt.Sprintf("%s Design URL: %s", basePrompt, url)
 	output, err := claude_code.Prompt(prompt, claude_code.DefaultPromptOps)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate HTML: %w", err)
+	}
+	return output, nil
+}
+
+func ImproveHTML(url string, nodeName string) (string, error) {
+	basePrompt := fmt.Sprintf("There is HTML/CSS code in the directory called 'generated/%s', which was generated from the following figma design. Compare the code to the figma design and fix any missing elements, inaccuracies, etc.", nodeName)
+	prompt := fmt.Sprintf("%s Design URL: %s", basePrompt, url)
+	output, err := claude_code.Prompt(prompt, claude_code.DefaultPromptOps)
+	if err != nil {
+		return "", fmt.Errorf("failed to improve HTML: %w", err)
 	}
 	return output, nil
 }
