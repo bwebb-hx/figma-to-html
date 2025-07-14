@@ -5,10 +5,12 @@ It aims to record the different methods discovered, but ultimately to define a s
 
 ## Research Docs TOC
 
-- [Builder.io](./docs/builder-io.md)
-  - A figma plugin that uses AI to generate code from Figma designs.
+- [Claude Code Scripting](./docs/claude-code.md)
+  - Using Claude Code to generate code from the terminal, or to use in scripting.
 - [Cursor Figma MCP](./docs/cursor-mcp.md)
   - Using a Figma MCP with Cursor to quickly generate Figma designs with Cursor's AI Agent.
+- [Builder.io](./docs/builder-io.md)
+  - A figma plugin that uses AI to generate code from Figma designs.
 
 ## Scripting & Tools TOC
 

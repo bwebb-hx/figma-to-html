@@ -100,10 +100,7 @@ First, let's think of how scripting or automation would be useful in terms of co
 To use Claude Code in a script, you can simply call it and give it text as an argument, like this:
 
 ```bash
-# to execute the prompt without any output
-claude "center the div in index.html"
-
-# to execute the prompt and print an output to the terminal
+# to execute the prompt in non-interactive mode
 claude -p "center the div in index.html"
 ```
 
@@ -118,8 +115,12 @@ Here are the flags to add:
 --permission-mode acceptEdits
 
 # so, for example, this lets claude read a figma design and create the code for it:
-claude "create this figma design in HTML/CSS: <url here>" --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits
+claude -p "create this figma design in HTML/CSS: <url here>" --allowedTools mcp__figma-mcp-1 --permission-mode acceptEdits
 ```
+
+> JSON Output:
+> You can also get claude code to respond in JSON format. This is especially useful if you want to use claude code in a script.
+> Read more about this here: https://docs.anthropic.com/en/docs/claude-code/sdk#json-output
 
 ### Script: Generate Designs for a List of URLs
 
