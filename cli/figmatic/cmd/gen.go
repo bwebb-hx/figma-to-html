@@ -22,13 +22,17 @@ var genSubNodes bool
 // genCmd represents the gen command
 var genCmd = &cobra.Command{
 	Use:   "gen",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Generate HTML/CSS code from a Figma design",
+	Long: `
+		Generate HTML/CSS code from a Figma design.
+		You can pass a Figma design URL, and the tool will generate HTML/CSS code for the design.
+		
+		For larger designs (or for increased accuracy), you can pass the --sub-nodes flag to generate the sub-nodes individually and then combine them.
+		Note that this will take longer, and will use more Claude Code API calls
+		
+		# Example: generating a figma design, using the "sub-nodes" technique.
+		figmatic gen --url "https://www.figma.com/design/FigmaDesignURL" -t "$FIGMA_ACCESS_TOKEN" --sub-nodes
+		`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if figmaURL == "" {
 			log.Fatal("figma URL is required")
@@ -42,14 +46,17 @@ to quickly create a Cobra application.`,
 		}
 
 		if genSubNodes {
+			fmt.Println("Getting URLs for sub-nodes of the provided Figma design node...")
 			urls, err := figma_api.GetNodeURLs(figmaURL, figmaAccessToken)
 			if err != nil {
 				log.Fatal(err)
 			}
 			// if no sub-node URLs are found, try using the original node URL
 			if len(urls) == 0 {
-				log.Println("no sub-node URLs found")
+				fmt.Println("No sub-node URLs found. Using the original node URL.")
 				urls = append(urls, figmaURL)
+			} else {
+				fmt.Printf("Found %v sub-node URLs.\n", len(urls))
 			}
 
 			var totalElapsed time.Duration
@@ -88,10 +95,12 @@ to quickly create a Cobra application.`,
 			fmt.Println(output)
 		} else {
 			// generate HTML for the original node
+			fmt.Printf("Generating HTML for %s...\n", figmaURL)
 			output, err := codegen.GenerateHTML(figmaURL)
 			if err != nil {
 				log.Fatal(err)
 			}
+			fmt.Println("\nClaude:")
 			fmt.Println(output)
 		}
 	},
