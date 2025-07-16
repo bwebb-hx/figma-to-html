@@ -16,10 +16,25 @@ func GenerateHTML(url string, nodeName string) (string, error) {
 	return output, nil
 }
 
+// ImproveHTML attempts to improve the HTML generated from a Figma design. It tells Claude to look for the specific file, and then consider the given Figma design.
+// Works without continuing a previous conversation, but also seems to be a little less effective than ContinueImproveHTML.
 func ImproveHTML(url string, nodeName string) (string, error) {
 	basePrompt := fmt.Sprintf("There is HTML/CSS code in the directory called 'generated/%s', which was generated from the following figma design. Compare the code to the figma design and fix any missing elements, inaccuracies, etc.", nodeName)
 	prompt := fmt.Sprintf("%s Design URL: %s", basePrompt, url)
 	output, err := claude_code.Prompt(prompt, claude_code.DefaultPromptOps)
+	if err != nil {
+		return "", fmt.Errorf("failed to improve HTML: %w", err)
+	}
+	return output, nil
+}
+
+// ContinueImproveHTML attempts to improve the HTML for the Figma design used in the last conversation with Claude.
+// It seems to work better than ImproveHTML, since Claude seems to have more context of what work was being done previously.
+func ContinueImproveHTML() (string, error) {
+	prompt := "Compare the HTML/CSS code to the figma design again, and add any missing elements, fix mistakes or inaccuracies, etc."
+	ops := claude_code.DefaultPromptOps
+	ops.Continue = true
+	output, err := claude_code.Prompt(prompt, ops)
 	if err != nil {
 		return "", fmt.Errorf("failed to improve HTML: %w", err)
 	}

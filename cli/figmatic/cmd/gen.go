@@ -78,7 +78,7 @@ var genCmd = &cobra.Command{
 				if iterations > 0 {
 					for i := range iterations {
 						fmt.Printf("..[%v/%v] Iterating on the HTML for %s...\n", i+1, iterations, figmaURL)
-						output, err = codegen.ImproveHTML(node.URL, node.LayerName)
+						output, err = codegen.ContinueImproveHTML()
 						if err != nil {
 							log.Println(err)
 							break // for now, break out since we've already generated code
@@ -120,7 +120,7 @@ var genCmd = &cobra.Command{
 			if iterations > 0 {
 				for i := range iterations {
 					fmt.Printf("[%v/%v] Iterating on the HTML for %s...\n", i+1, iterations, figmaURL)
-					output, err = codegen.ImproveHTML(figmaURL, "root")
+					output, err = codegen.ContinueImproveHTML()
 					if err != nil {
 						log.Println(err)
 						break // for now, break out since we've already generated code

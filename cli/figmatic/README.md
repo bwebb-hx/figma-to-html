@@ -36,7 +36,9 @@ If it's correctly set under the user scope, it should show your MCP config regar
 
 For detailed usage instructions, enter `figmatic -h` in the terminal.
 
-But, here's an example of generating a figma design into code:
+### Generate Figma Designs
+
+Here's a simple usage example of the `gen` command:
 
 ```bash
 figmatic gen --url "https://www.figma.com/design/AxOg233wgtoO27RFd8QIOv/M55_コーディングテスト用?node-id=1-1062" -t "$FIGMA_ACCESS_TOKEN" --sub-nodes
@@ -50,3 +52,18 @@ gen:          command for generating code from figma designs
 -t:           your Figma access token
 --sub-nodes:  tells the tool to generate the sub-nodes (one level below) first, and then combine those results. For improved accuracy.
 ```
+
+#### Flags
+
+See the help text for info about the various flags; things like `--url` are a bit self-explanatory. But, here is some info on the more nuanced and optional flags:
+
+- `--sub-nodes`: Split the given design into the nodes directly below it, and combine the result of each generated sub-node into one HTML file.
+  - Using this flag will potentially multiply the execution time, depending on how many sub-nodes there are under the node you provided.
+  - This technique results in **much higher quality** for large and complex designs, and is highly recommended for such designs.
+  - If you are only generating a small node without many complex sub-nodes below it, then it may not be useful.
+
+- `--iterations`: Specify a number of times for Claude Code to iterate on a generated HTML page, attempting to improve it and fix any inaccuracies.
+  - Using this flag will, of course, potentially multiply the execution time of the script.
+  - In my own testing, it seems that 1 or 2 iterations can yield good results, but more than that and each iteration begins to yield less improvement.
+  - In some cases, too much iteration seems like it could cause **bad** effects, where the design actually looks a little worse as a result.
+  - I'd only recommend using it if the design you are generating is quite complicated. If you are generating using the `--sub-nodes` flag, it may be less useful since each individual node being generated is smaller.

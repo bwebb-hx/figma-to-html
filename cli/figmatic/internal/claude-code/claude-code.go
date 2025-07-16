@@ -18,6 +18,7 @@ var (
 type PromptOps struct {
 	AllowedTools []string
 	AllowEdits   bool
+	Continue     bool
 }
 
 const FigmaMCP = "mcp__figma-mcp-1"
@@ -73,8 +74,12 @@ func Prompt(prompt string, ops PromptOps) (string, error) {
 	if ops.AllowEdits {
 		args = append(args, "--permission-mode", "acceptEdits")
 	}
+	if ops.Continue {
+		args = append(args, "--continue")
+	}
 
 	args = append(args, "--output-format", "json")
+	// args = append(args, "--verbose")
 
 	cmd := exec.Command("claude", args...)
 
