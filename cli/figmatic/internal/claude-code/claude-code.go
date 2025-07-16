@@ -10,6 +10,8 @@ import (
 	"strings"
 	"syscall"
 
+	globalconfig "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/global-config"
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/logging"
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
 )
 
@@ -110,6 +112,10 @@ func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
 	var response ClaudeJSONResponse
 	if err := json.Unmarshal(output, &response); err != nil {
 		return ClaudeJSONResponse{}, fmt.Errorf("failed to unmarshal claude response: %w", err)
+	}
+
+	if globalconfig.WRITE_LOG_FILES {
+		logging.WriteLog("prompt", prompt+"\n\n"+response.String())
 	}
 
 	TotalCostUsd += response.TotalCostUsd

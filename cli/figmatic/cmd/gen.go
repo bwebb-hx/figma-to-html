@@ -12,6 +12,7 @@ import (
 
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/codegen"
 	figma_api "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/figma-api"
+	globalconfig "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/global-config"
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -38,6 +39,10 @@ var genCmd = &cobra.Command{
 		figmatic gen --url "https://www.figma.com/design/FigmaDesignURL" -t "$FIGMA_ACCESS_TOKEN" --sub-nodes
 		`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if writeLogs {
+			globalconfig.WRITE_LOG_FILES = true
+			utils.Colors.LowkeyPrint("(logging turned on)")
+		}
 		if openInClaude {
 			defer codegen.OpenInClaudeInteractive("") // continue last session
 			utils.Colors.LowkeyPrint("(Claude Code will open in interactive mode after generate command ends)")
@@ -124,7 +129,7 @@ func generateHTMLWorker(url string, nodeName string, numIterations int, wg *sync
 	if err != nil {
 		log.Println(err)
 	}
-	utils.Colors.LowkeyPrint(fmt.Sprintf("[%s] Worker finished! Time: %s | Turns: %v | Cost USD: $%.2f", nodeName, time.Since(start).Truncate(time.Second), stats.TotalTurns, stats.TotalCostUSD))
+	utils.Colors.SuccessLowkeyPrint(fmt.Sprintf("[%s] Worker finished! Time: %s | Turns: %v | Cost USD: $%.2f", nodeName, time.Since(start).Truncate(time.Second), stats.TotalTurns, stats.TotalCostUSD))
 }
 
 type generateHTMLStats struct {

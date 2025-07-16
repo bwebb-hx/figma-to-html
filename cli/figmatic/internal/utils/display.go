@@ -7,14 +7,15 @@ import (
 )
 
 type colors struct {
-	Lowkey       func(s string) string
-	LowkeyPrint  func(s string)
-	Bold         func(s string) string
-	BoldPrint    func(s string)
-	Success      func(s string) string
-	SuccessPrint func(s string)
-	Error        func(s string) string
-	ErrorPrint   func(s string)
+	Lowkey             func(s string) string
+	LowkeyPrint        func(s string)
+	Bold               func(s string) string
+	BoldPrint          func(s string)
+	Success            func(s string) string
+	SuccessPrint       func(s string)
+	SuccessLowkeyPrint func(s string)
+	Error              func(s string) string
+	ErrorPrint         func(s string)
 }
 
 var Colors = colors{
@@ -35,6 +36,9 @@ var Colors = colors{
 	},
 	SuccessPrint: func(s string) {
 		fmt.Println(success(s))
+	},
+	SuccessLowkeyPrint: func(s string) {
+		fmt.Println(lowkeySuccess(s))
 	},
 	Error: func(s string) string {
 		return error(s)
@@ -58,4 +62,8 @@ func success(s string) string {
 
 func error(s string) string {
 	return color.New(color.FgHiRed).SprintFunc()(s)
+}
+
+func lowkeySuccess(s string) string {
+	return color.New(color.FgGreen).SprintFunc()(s)
 }

@@ -12,6 +12,7 @@ import (
 )
 
 var setWorkingDir string
+var writeLogs bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -48,6 +49,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&setWorkingDir, "working-dir", "w", "", "Set the working directory for the application. This affects where tools like claude code will operate.")
+	rootCmd.PersistentFlags().BoolVar(&writeLogs, "logs", false, "If set, logs will be written for debugging purposes.")
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
