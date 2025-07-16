@@ -156,6 +156,83 @@ Total cost:            $0.4831
 Total duration (API):  6m 6.0s
 ```
 
+## Using a `.fig` File to Generate HTML
+
+I tried giving Claude Code a `.fig` file (file representing figma design data) to see if it can read the data and generate HTML from it.
+
+Unfortunately, it seems like the `.fig` files may be encrypted or containing binary data, which Claude can't read:
+
+```
+⏺ Read(M55_コーディングテスト用.fig)
+  ⎿  Error: This tool cannot read binary files. The file appears to be a
+     binary .fig file. Please use appropriate tools for binary file
+     analysis.
+```
+
+From here, Claude tried various ways to read URLs, File Keys, etc from the data in the file. It seemed to fail on each attempt:
+
+```
+⏺ The .fig file is a binary file that contains a Figma URL or file key. Let
+   me try to extract the file key using bash to search for URL patterns.
+
+⏺ Bash(strings "/Users/benwebb/dev/hexabase/hxai/temp/fig-file/M55_コーディ
+      ングテスト用.fig" | grep -E "(figma\.com|file/)" | head -5)
+  ⎿  (No content)
+
+⏺ Let me try a different approach to find the file key:
+
+⏺ Bash(strings "/Users/benwebb/dev/hexabase/hxai/temp/fig-file/M55_コーディ
+      ングテスト用.fig" | grep -E "[a-zA-Z0-9]{22,}" | head -10)
+  ⎿ nBBBBBBBBBBBBBBBBBBBBBBCC
+    `gGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggG
+    GggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGG
+    … +6 lines (ctrl+r to expand)
+
+
+⏺ Let me try to find the actual Figma file key by looking for specific patterns:
+
+⏺ Bash(hexdump -C
+      "/Users/benwebb/dev/hexabase/hxai/temp/fig-file/M55_コーディングテスト用.fig" |
+      grep -i "figma\|file\|key" | head -5)
+  ⎿  (No content)
+
+⏺ Let me try a different approach and look for the file key pattern more broadly:
+
+⏺ Bash(strings
+      "/Users/benwebb/dev/hexabase/hxai/temp/fig-file/M55_コーディングテスト用.fig" |
+      grep -E "[A-Za-z0-9]{20,50}" | head -20)
+  ⎿ nBBBBBBBBBBBBBBBBBBBBBBCC
+    `gGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGG
+    ggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGGggGG
+    … +6 lines (ctrl+r to expand)
+
+
+⏺ It seems the .fig file doesn't contain a readable file key. Let me try a different
+  approach and look for any URL patterns:
+
+⏺ Bash(strings
+      "/Users/benwebb/dev/hexabase/hxai/temp/fig-file/M55_コーディングテスト用.fig" |
+      grep -i "http\|www\|\.com" | head -10)
+  ⎿  yuwwwwwwwwwwwwwww
+     pwwwwwwwwwwww
+     qwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+     … +6 lines (ctrl+r to expand)
+```
+
+In the end, Claude admitted defeat and had this conclusion:
+
+```
+⏺ Unfortunately, the .fig file format doesn't contain a readable file key. The .fig
+  files exported from Figma are usually just shortcuts that contain the URL to the Figma
+   file, but this one appears to be corrupted or in a different format.
+
+  To generate HTML/CSS from a Figma design, I would need either:
+  1. The actual Figma file URL (like https://www.figma.com/file/[FILE_KEY]/...)
+  2. A valid Figma file key
+```
+
+So, it seems that these files don't actually contain all the data needed to generate Figma designs anyway; Claude seems to think that they only could contain a URL or file key which it would then need to access directly from Figma's servers anyway. I think using a figma file directly is probably not a good option.
+
 ## Dev Notes
 
 Here are some things I've learned about claude code as I've been working with the CLI and building my own wrapper CLI:
