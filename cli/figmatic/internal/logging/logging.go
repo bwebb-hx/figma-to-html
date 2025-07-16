@@ -6,7 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
 )
+
+func createLogString(s string) string {
+	return fmt.Sprintf("---\n%s\n\n%s\n", time.Now(), s)
+}
 
 func WriteLog(fileName string, content string) {
 	err := os.Mkdir("logs", 0755)
@@ -23,10 +29,19 @@ func WriteLog(fileName string, content string) {
 	}
 	defer file.Close()
 
-	s := fmt.Sprintf("---\n%s\n\n%s", time.Now(), content)
-
-	_, err = file.WriteString(s)
+	_, err = file.WriteString(createLogString(content))
 	if err != nil {
 		log.Println("failed to write logs: " + err.Error())
 	}
+}
+
+func Error(errorMsg any) {
+	s := fmt.Sprintf("ERROR: %s", errorMsg)
+	utils.Colors.ErrorPrint(s)
+	WriteLog("error", s)
+}
+
+func Fatal(errorMsg any) {
+	Error(errorMsg)
+	os.Exit(1)
 }

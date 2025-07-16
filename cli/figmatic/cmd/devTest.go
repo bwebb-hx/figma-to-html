@@ -5,11 +5,11 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	claude_code "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/claude-code"
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/codegen"
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,7 @@ var devTestCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		output, err := claude_code.Prompt("explain the process of how python code compiles to machine code", claude_code.PromptOps{})
 		if err != nil {
-			log.Fatal(err)
+			logging.Fatal(err)
 		}
 
 		fmt.Println("claude response:", output.Result)

@@ -104,14 +104,15 @@ func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
 	cmd := exec.Command("claude", args...)
 
 	// execute the command and capture the output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return ClaudeJSONResponse{}, fmt.Errorf("failed to execute claude command: %w", err)
-	}
+	stdout, stderr := cmd.CombinedOutput()
+	// we check stderr after unmarshalling, since stdout will be a json with more information about the error
 
 	var response ClaudeJSONResponse
-	if err := json.Unmarshal(output, &response); err != nil {
+	if err := json.Unmarshal(stdout, &response); err != nil {
 		return ClaudeJSONResponse{}, fmt.Errorf("failed to unmarshal claude response: %w", err)
+	}
+	if stderr != nil {
+		return ClaudeJSONResponse{}, fmt.Errorf("claude prompt returned error: %w. JSON response content: %s", stderr, response.Result)
 	}
 
 	if globalconfig.WRITE_LOG_FILES {

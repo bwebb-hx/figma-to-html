@@ -2,9 +2,9 @@ package codegen
 
 import (
 	"fmt"
-	"log"
 
 	claude_code "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/claude-code"
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/logging"
 )
 
 func GenerateHTML(url string, nodeName string) (claude_code.ClaudeJSONResponse, error) {
@@ -71,6 +71,6 @@ func OpenInClaudeInteractive(sessionID string) {
 
 	err := claude_code.RunClaudeInTerminal(ops)
 	if err != nil {
-		log.Fatal(err)
+		logging.Fatal(err)
 	}
 }

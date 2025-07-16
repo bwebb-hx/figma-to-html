@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -33,10 +34,10 @@ func Execute() {
 	if setWorkingDir != "" {
 		setWorkingDir, err := filepath.Abs(setWorkingDir)
 		if err != nil {
-			log.Fatal(err)
+			logging.Fatal(err)
 		}
 		if err := os.Chdir(setWorkingDir); err != nil {
-			log.Fatal(err)
+			logging.Fatal(err)
 		}
 		log.Printf("Set working directory to %s", setWorkingDir)
 	}

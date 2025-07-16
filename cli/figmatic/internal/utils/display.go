@@ -20,50 +20,50 @@ type colors struct {
 
 var Colors = colors{
 	Lowkey: func(s string) string {
-		return lowkey(s)
+		return lowkeyString(s)
 	},
 	LowkeyPrint: func(s string) {
-		fmt.Println(lowkey(s))
+		fmt.Println(lowkeyString(s))
 	},
 	Bold: func(s string) string {
-		return bold(s)
+		return boldString(s)
 	},
 	BoldPrint: func(s string) {
-		fmt.Println(bold(s))
+		fmt.Println(boldString(s))
 	},
 	Success: func(s string) string {
-		return success(s)
+		return successString(s)
 	},
 	SuccessPrint: func(s string) {
-		fmt.Println(success(s))
+		fmt.Println(successString(s))
 	},
 	SuccessLowkeyPrint: func(s string) {
-		fmt.Println(lowkeySuccess(s))
+		fmt.Println(lowkeySuccessString(s))
 	},
 	Error: func(s string) string {
-		return error(s)
+		return errorString(s)
 	},
 	ErrorPrint: func(s string) {
-		fmt.Println(error(s))
+		fmt.Println(errorString(s))
 	},
 }
 
-func lowkey(s string) string {
+func lowkeyString(s string) string {
 	return color.New(color.FgHiBlack).SprintFunc()(s)
 }
 
-func bold(s string) string {
+func boldString(s string) string {
 	return color.New(color.Bold).SprintFunc()(s)
 }
 
-func success(s string) string {
+func successString(s string) string {
 	return color.New(color.FgHiGreen).SprintFunc()(s)
 }
 
-func error(s string) string {
+func errorString(s string) string {
 	return color.New(color.FgHiRed).SprintFunc()(s)
 }
 
-func lowkeySuccess(s string) string {
+func lowkeySuccessString(s string) string {
 	return color.New(color.FgGreen).SprintFunc()(s)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/codegen"
 	figma_api "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/figma-api"
 	globalconfig "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/global-config"
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/logging"
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -49,13 +50,13 @@ var genCmd = &cobra.Command{
 		}
 
 		if figmaURL == "" {
-			log.Fatal("figma URL is required")
+			logging.Fatal("figma URL is required")
 		}
 		if figmaAccessToken == "" {
 			// try to get from env
 			figmaAccessToken = os.Getenv("FIGMA_ACCESS_TOKEN")
 			if figmaAccessToken == "" {
-				log.Fatal("Figma access token is required. Either set it in the FIGMA_ACCESS_TOKEN environment variable, or pass it with the --figma-access-token flag.")
+				logging.Fatal("Figma access token is required. Either set it in the FIGMA_ACCESS_TOKEN environment variable, or pass it with the --figma-access-token flag.")
 			}
 		}
 
@@ -63,7 +64,7 @@ var genCmd = &cobra.Command{
 			fmt.Println("Getting URLs for sub-nodes of the provided Figma design node...")
 			nodes, err := figma_api.GetNodeURLs(figmaURL, figmaAccessToken)
 			if err != nil {
-				log.Fatal(err)
+				logging.Fatal(err)
 			}
 			// if no sub-node URLs are found, try using the original node URL
 			if len(nodes) == 0 {
@@ -86,7 +87,7 @@ var genCmd = &cobra.Command{
 			output, err := codegen.CombineHTML(figmaURL)
 			if err != nil {
 				fmt.Fprint(os.Stderr, output.String()+"\n")
-				log.Fatal(err)
+				logging.Fatal(err)
 			}
 			utils.Colors.Lowkey(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
 			fmt.Println("\nClaude:")
@@ -95,7 +96,7 @@ var genCmd = &cobra.Command{
 			// generate HTML for the original node
 			stats, err := generateHTML(figmaURL, "root", iterations, "")
 			if err != nil {
-				log.Fatal(err)
+				logging.Fatal(err)
 			}
 			fmt.Printf("Finished generating HTML! Turns: %v | Cost: $%.2f\n", stats.TotalTurns, stats.TotalCostUSD)
 		}
@@ -127,7 +128,7 @@ func generateHTMLWorker(url string, nodeName string, numIterations int, wg *sync
 	start := time.Now()
 	stats, err := generateHTML(url, nodeName, numIterations, nodeName)
 	if err != nil {
-		log.Println(err)
+		logging.Error(err)
 	}
 	utils.Colors.SuccessLowkeyPrint(fmt.Sprintf("[%s] Worker finished! Time: %s | Turns: %v | Cost USD: $%.2f", nodeName, time.Since(start).Truncate(time.Second), stats.TotalTurns, stats.TotalCostUSD))
 }
