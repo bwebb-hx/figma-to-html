@@ -19,6 +19,7 @@ type PromptOps struct {
 	AllowedTools []string
 	AllowEdits   bool
 	Continue     bool
+	Resume       string
 }
 
 const FigmaMCP = "mcp__figma-mcp-1"
@@ -52,6 +53,8 @@ type ClaudeJSONResponse struct {
 	Subtype      string  `json:"subtype"`
 	IsError      bool    `json:"is_error"`
 	TotalCostUsd float64 `json:"total_cost_usd"`
+	SessionID    string  `json:"session_id"`
+	NumTurns     int     `json:"num_turns"`
 }
 
 func (r ClaudeJSONResponse) String() string {
@@ -64,7 +67,7 @@ func (r ClaudeJSONResponse) String() string {
 	return s
 }
 
-func Prompt(prompt string, ops PromptOps) (string, error) {
+func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
 	args := []string{"-p", fmt.Sprintf("\"%s\"", prompt)}
 
 	if len(ops.AllowedTools) > 0 {
@@ -76,6 +79,8 @@ func Prompt(prompt string, ops PromptOps) (string, error) {
 	}
 	if ops.Continue {
 		args = append(args, "--continue")
+	} else if ops.Resume != "" {
+		args = append(args, "--resume", ops.Resume)
 	}
 
 	args = append(args, "--output-format", "json")
@@ -86,15 +91,15 @@ func Prompt(prompt string, ops PromptOps) (string, error) {
 	// execute the command and capture the output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to execute claude command: %w", err)
+		return ClaudeJSONResponse{}, fmt.Errorf("failed to execute claude command: %w", err)
 	}
 
 	var response ClaudeJSONResponse
 	if err := json.Unmarshal(output, &response); err != nil {
-		return "", fmt.Errorf("failed to unmarshal claude response: %w", err)
+		return ClaudeJSONResponse{}, fmt.Errorf("failed to unmarshal claude response: %w", err)
 	}
 
 	TotalCostUsd += response.TotalCostUsd
 
-	return response.String(), nil
+	return response, nil
 }

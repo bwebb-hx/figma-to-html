@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/codegen"
@@ -60,36 +61,8 @@ var genCmd = &cobra.Command{
 				fmt.Printf("Found %v sub-node URLs.\n", len(nodes))
 			}
 
-			var totalElapsed time.Duration
-
-			for i, node := range nodes {
-				fmt.Printf("\n[%v/%v] Generating HTML for %s\n", i+1, len(nodes), node.URL)
-				if totalElapsed > 0 {
-					timeEstimate := totalElapsed / time.Duration(i) * time.Duration(len(nodes)-i)
-					utils.Colors.LowkeyPrint(fmt.Sprintf("time remaining: %s", timeEstimate.Truncate(time.Second)))
-				}
-
-				start := time.Now()
-				output, err := codegen.GenerateHTML(node.URL, node.LayerName)
-				if err != nil {
-					fmt.Fprint(os.Stderr, output+"\n")
-					log.Fatal(err)
-				}
-				if iterations > 0 {
-					for i := range iterations {
-						fmt.Printf("..[%v/%v] Iterating on the HTML for %s...\n", i+1, iterations, figmaURL)
-						output, err = codegen.ContinueImproveHTML()
-						if err != nil {
-							log.Println(err)
-							break // for now, break out since we've already generated code
-						}
-						utils.Colors.LowkeyPrint("..Iteration output from Claude:")
-						utils.Colors.LowkeyPrint(output)
-					}
-				}
-				utils.Colors.LowkeyPrint(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
-				totalElapsed += time.Since(start)
-			}
+			// generate each node concurrently
+			generateHTMLWorkGroup(nodes, iterations)
 
 			if len(nodes) == 1 {
 				log.Println("only one URL generated; skipping combine step.")
@@ -100,7 +73,7 @@ var genCmd = &cobra.Command{
 			start := time.Now()
 			output, err := codegen.CombineHTML(figmaURL)
 			if err != nil {
-				fmt.Fprint(os.Stderr, output+"\n")
+				fmt.Fprint(os.Stderr, output.String()+"\n")
 				log.Fatal(err)
 			}
 			utils.Colors.Lowkey(fmt.Sprintf("done! %v seconds elapsed\n", time.Since(start).Seconds()))
@@ -108,30 +81,91 @@ var genCmd = &cobra.Command{
 			fmt.Println(output)
 		} else {
 			// generate HTML for the original node
-			fmt.Printf("Generating HTML for %s...\n", figmaURL)
-
-			output, err := codegen.GenerateHTML(figmaURL, "root")
+			stats, err := generateHTML(figmaURL, "root", iterations, "")
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println("\nClaude:")
-			fmt.Println(output)
-
-			if iterations > 0 {
-				for i := range iterations {
-					fmt.Printf("[%v/%v] Iterating on the HTML for %s...\n", i+1, iterations, figmaURL)
-					output, err = codegen.ContinueImproveHTML()
-					if err != nil {
-						log.Println(err)
-						break // for now, break out since we've already generated code
-					}
-					utils.Colors.LowkeyPrint("Iteration output from Claude:")
-					utils.Colors.LowkeyPrint(output)
-				}
-				fmt.Println("Iterations complete!")
-			}
+			fmt.Printf("Finished generating HTML! Turns: %v | Cost: $%.2f\n", stats.TotalTurns, stats.TotalCostUSD)
 		}
 	},
+}
+
+func generateHTMLWorkGroup(nodes []figma_api.FigmaNode, numIterations int) {
+	var wg sync.WaitGroup
+
+	fmt.Printf("Generating %v Figma nodes concurrently...\n", len(nodes))
+	if numIterations > 0 {
+		fmt.Printf("Each node's HTML will be iterated on %v extra time(s)\n", numIterations)
+	}
+
+	start := time.Now()
+	for _, node := range nodes {
+		wg.Add(1)
+		go generateHTMLWorker(node.URL, node.LayerName, numIterations, &wg)
+	}
+
+	wg.Wait()
+	fmt.Printf("All workers done generating HTML! Time elapsed: %s\n", time.Since(start).Truncate(time.Second))
+}
+
+func generateHTMLWorker(url string, nodeName string, numIterations int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	utils.Colors.LowkeyPrint(fmt.Sprintf("[%s] Worker generating HTML for %s...", nodeName, url))
+
+	start := time.Now()
+	stats, err := generateHTML(url, nodeName, numIterations, nodeName)
+	if err != nil {
+		log.Println(err)
+	}
+	utils.Colors.LowkeyPrint(fmt.Sprintf("[%s] Worker finished! Time: %s | Turns: %v | Cost USD: $%.2f", nodeName, time.Since(start).Truncate(time.Second), stats.TotalTurns, stats.TotalCostUSD))
+}
+
+type generateHTMLStats struct {
+	TotalTurns   int
+	TotalCostUSD float64
+}
+
+// generateHTML generates HTML for the given URL. If workerName is set, output will be minimized and shown as though part of a work group that is executing concurrently.
+func generateHTML(url string, nodeName string, numIterations int, workerName string) (generateHTMLStats, error) {
+	stats := generateHTMLStats{}
+
+	output, err := codegen.GenerateHTML(url, nodeName)
+	if err != nil {
+		return stats, err
+	}
+	stats.TotalTurns += output.NumTurns
+	stats.TotalCostUSD += output.TotalCostUsd
+
+	if workerName == "" {
+		fmt.Println("\nClaude:")
+		fmt.Println(output)
+	}
+
+	if numIterations > 0 {
+		for i := range numIterations {
+			if workerName == "" {
+				fmt.Printf("[%v/%v] Iterating on the HTML for %s...\n", i+1, numIterations, figmaURL)
+			} else {
+				utils.Colors.LowkeyPrint(fmt.Sprintf("[%s] Iteration %v/%v...", workerName, i+1, numIterations))
+			}
+			output, err = codegen.ContinueImproveHTML(output.SessionID)
+			if err != nil {
+				return stats, err
+			}
+			stats.TotalTurns += output.NumTurns
+			stats.TotalCostUSD += output.TotalCostUsd
+
+			if workerName == "" {
+				utils.Colors.LowkeyPrint("Iteration output from Claude:")
+				utils.Colors.LowkeyPrint(output.String())
+			}
+		}
+		if workerName == "" {
+			fmt.Println("Iterations complete!")
+		}
+	}
+
+	return stats, nil
 }
 
 func init() {
