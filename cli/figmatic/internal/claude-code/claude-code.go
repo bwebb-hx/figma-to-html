@@ -5,8 +5,10 @@ package claude_code
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/utils"
 )
@@ -67,8 +69,8 @@ func (r ClaudeJSONResponse) String() string {
 	return s
 }
 
-func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
-	args := []string{"-p", fmt.Sprintf("\"%s\"", prompt)}
+func getArgsFromOptions(ops PromptOps) []string {
+	var args []string
 
 	if len(ops.AllowedTools) > 0 {
 		args = append(args, "--allowedTools")
@@ -81,6 +83,17 @@ func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
 		args = append(args, "--continue")
 	} else if ops.Resume != "" {
 		args = append(args, "--resume", ops.Resume)
+	}
+
+	return args
+}
+
+func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
+	args := []string{"-p", fmt.Sprintf("\"%s\"", prompt)}
+
+	opArgs := getArgsFromOptions(ops)
+	if len(opArgs) > 0 {
+		args = append(args, opArgs...)
 	}
 
 	args = append(args, "--output-format", "json")
@@ -102,4 +115,22 @@ func Prompt(prompt string, ops PromptOps) (ClaudeJSONResponse, error) {
 	TotalCostUsd += response.TotalCostUsd
 
 	return response, nil
+}
+
+func RunClaudeInTerminal(ops PromptOps) error {
+	args := getArgsFromOptions(ops)
+
+	binary, err := exec.LookPath("claude")
+	if err != nil {
+		return err
+	}
+
+	fullArgs := []string{"claude"}
+	fullArgs = append(fullArgs, args...)
+
+	env := os.Environ()
+
+	err = syscall.Exec(binary, fullArgs, env)
+	// if the above worked, go process should now have exited
+	return err
 }

@@ -5,23 +5,29 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	claude_code "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/claude-code"
+	"github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/codegen"
 	"github.com/spf13/cobra"
 )
 
 // devTestCmd represents the devTest command
 var devTestCmd = &cobra.Command{
 	Use:   "devTest",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "test code used for debugging; no official purpose",
+	Long:  `test code used for debugging; no official purpose`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(claude_code.CheckMCPs())
+		output, err := claude_code.Prompt("explain the process of how python code compiles to machine code", claude_code.PromptOps{})
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("claude response:", output.Result)
+		fmt.Println("will open in claude interactive in 10 seconds...")
+		time.Sleep(10 * time.Second)
+		codegen.OpenInClaudeInteractive(output.SessionID)
 	},
 }
 

@@ -21,6 +21,8 @@ var figmaAccessToken string
 var genSubNodes bool
 var iterations int
 
+var openInClaude bool
+
 // genCmd represents the gen command
 var genCmd = &cobra.Command{
 	Use:   "gen",
@@ -36,6 +38,11 @@ var genCmd = &cobra.Command{
 		figmatic gen --url "https://www.figma.com/design/FigmaDesignURL" -t "$FIGMA_ACCESS_TOKEN" --sub-nodes
 		`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if openInClaude {
+			defer codegen.OpenInClaudeInteractive("") // continue last session
+			utils.Colors.LowkeyPrint("(Claude Code will open in interactive mode after generate command ends)")
+		}
+
 		if figmaURL == "" {
 			log.Fatal("figma URL is required")
 		}
@@ -175,4 +182,5 @@ func init() {
 	genCmd.Flags().StringVarP(&figmaAccessToken, "figma-access-token", "t", "", "Figma access token")
 	genCmd.Flags().BoolVarP(&genSubNodes, "sub-nodes", "s", false, "Generate HTML for sub-nodes and then combine them. Increases accuracy, especially for complex designs, but increases time and cost.")
 	genCmd.Flags().IntVarP(&iterations, "iterations", "i", 0, "Number of extra iterations for Claude to refine the generated code. Defaults to 0. An iteration involves asking Claude to review how accurate the code is and try to improve it.")
+	genCmd.Flags().BoolVar(&openInClaude, "open", false, "Set this flag to continue the last executing Claude Code session and launch it in interactive mode. Causes this CLI to exit and Claude Code to start in the foreground.")
 }

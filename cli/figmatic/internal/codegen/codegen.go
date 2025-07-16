@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"fmt"
+	"log"
 
 	claude_code "github.com/bwebb-hx/figma-to-html/cli/figmatic/internal/claude-code"
 )
@@ -58,4 +59,18 @@ Take a look at this figma design, and try to put all of these HTML files togethe
 		return claude_code.ClaudeJSONResponse{}, fmt.Errorf("failed to combine HTML: %w", err)
 	}
 	return output, nil
+}
+
+func OpenInClaudeInteractive(sessionID string) {
+	ops := claude_code.DefaultPromptOps
+	if sessionID != "" {
+		ops.Resume = sessionID
+	} else {
+		ops.Continue = true
+	}
+
+	err := claude_code.RunClaudeInTerminal(ops)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
