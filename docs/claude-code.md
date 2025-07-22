@@ -246,3 +246,16 @@ In the instructions above, we are setting a **local** scope. This means it's onl
 If you want an MCP server that's globally accessible, then you need to use the **user** scope. More on that here:
 
 https://docs.anthropic.com/en/docs/claude-code/mcp#user-scope
+
+### Claude Subscription Plans
+
+During development, I eventually switched from the API billing account style to using the Max subscription plan. I noticed a couple things:
+
+1. The Max plan seemed to use up it's API usage limit much quicker. 
+
+After only a few hours of testing my CLI, I got an error telling me that I've used up my allotment for the day and need to wait until tomorrow.
+This prompted me to switch back to the non-subscription plan and I was able to continue using Claude Code.
+
+2. The Max plan seems to take longer to execute.
+
+I'm not sure why, but I wonder if the Max plan defaults to using fancier models which might take longer to execute.
